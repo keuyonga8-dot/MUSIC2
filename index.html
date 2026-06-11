@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat Dodge — 패턴 에디터</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;min-height:100vh;}
+#header{padding:12px 16px;background:#111;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;gap:12px;}
+#header h1{font-size:14px;font-weight:600;color:#AFA9EC;}
+#header span{font-size:11px;color:#444;}
+
+/* 유튜브 + 설정 */
+#setup{padding:12px 16px;background:#0d0d18;border-bottom:1px solid #1a1a2e;display:flex;flex-direction:column;gap:8px;}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.row label{font-size:11px;color:#555;white-space:nowrap;}
+.inp{font-size:12px;padding:6px 10px;background:#111;border:1px solid #222;border-radius:6px;color:#fff;outline:none;}
+.inp:focus{border-color:#534AB7;}
+.btn{font-size:12px;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:500;white-space:nowrap;}
+.btn-primary{background:#534AB7;color:#fff;}.btn-primary:hover{background:#7F77DD;}
+.btn-green{background:#1D9E75;color:#fff;}.btn-green:hover{background:#25c090;}
+.btn-red{background:#E24B4A;color:#fff;}.btn-red:hover{background:#f06060;}
+.btn-gray{background:#222;color:#aaa;border:1px solid #333;}.btn-gray:hover{background:#2a2a2a;}
+
+/* 유튜브 영상 */
+#yt-wrap{width:100%;aspect-ratio:16/9;background:#000;position:relative;}
+#yt-wrap iframe{width:100%;height:100%;border:none;display:block;}
+
+/* 타임라인 + 에디터 */
+#editor-area{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+#editor-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+#bpm-display{font-size:13px;color:#AFA9EC;font-weight:600;}
+#beat-counter{font-size:12px;color:#555;}
+
+/* 그리드 */
+#grid-wrap{background:#080810;border:1px solid #1a1a2e;border-radius:8px;padding:10px;overflow-x:auto;}
+#grid-header{display:flex;gap:2px;margin-bottom:4px;padding-left:32px;}
+#grid-header span{width:20px;font-size:8px;color:#333;text-align:center;flex:0 0 auto;}
+#grid-body{display:flex;flex-direction:column;gap:2px;}
+.grid-row{display:flex;gap:2px;align-items:center;}
+.grid-row-label{width:30px;font-size:10px;color:#555;text-align:right;padding-right:4px;flex:0 0 auto;}
+.grid-cell{width:20px;height:20px;border-radius:3px;background:#111;border:1px solid #1a1a2e;cursor:pointer;flex:0 0 auto;transition:background .1s;position:relative;}
+.grid-cell:hover{background:#1a1a2e;}
+.grid-cell.bad{background:#E24B4A;border-color:#E24B4A;}
+.grid-cell.good{background:#1D9E75;border-color:#1D9E75;}
+.grid-cell.current{outline:2px solid #fff;outline-offset:1px;}
+
+/* 재생 커서 */
+#play-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;opacity:.6;pointer-events:none;display:none;}
+
+/* 범례 + 도구 */
+#tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500;}
+.tool-btn.active{outline:2px solid #fff;}
+#tool-bad{background:rgba(226,75,74,.3);border:1px solid #E24B4A;color:#E24B4A;}
+#tool-good{background:rgba(29,158,117,.3);border:1px solid #1D9E75;color:#1D9E75;}
+#tool-erase{background:rgba(255,255,255,.05);border:1px solid #333;color:#888;}
+
+/* 출력 */
+#output-area{background:#080810;border:1px solid #1a1a2e;border-radius:8px;padding:12px;}
+#output-area h3{font-size:12px;color:#555;margin-bottom:8px;}
+#output-code{font-family:monospace;font-size:11px;color:#AFA9EC;background:#0a0a10;padding:10px;border-radius:6px;white-space:pre;overflow-x:auto;max-height:200px;overflow-y:auto;border:1px solid #1a1a2e;}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🎵 Beat Dodge 패턴 에디터</h1>
+  <span>노래 들으면서 비트 배치 → 코드 복사 → 메인 파일에 붙여넣기</span>
+</div>
+
+<div id="setup">
+  <div class="row">
+    <label>유튜브 URL</label>
+    <input id="yt-url" class="inp" style="flex:1;min-width:200px;" placeholder="https://youtu.be/..."/>
+    <button class="btn btn-primary" onclick="loadYT()">불러오기</button>
+  </div>
+  <div class="row">
+    <label>곡 제목</label>
+    <input id="song-title" class="inp" style="width:200px;" placeholder="예: Hugo 번외곡 | Melting down"/>
+    <label>ytId</label>
+    <input id="song-ytid" class="inp" style="width:120px;" placeholder="자동입력"/>
+    <label>BPM</label>
+    <input id="song-bpm" class="inp" style="width:70px;" type="number" value="120"/>
+    <label>총 비트</label>
+    <input id="song-beats" class="inp" style="width:70px;" type="number" value="64"/>
+    <label>색상</label>
+    <input id="song-color" class="inp" style="width:90px;" type="color" value="#534AB7"/>
+    <button class="btn btn-gray" onclick="initGrid()">그리드 초기화</button>
+  </div>
+</div>
+
+<div id="yt-wrap" style="display:none;"></div>
+
+<div id="editor-area">
+  <div id="tools">
+    <span style="font-size:11px;color:#555;">도구:</span>
+    <button class="tool-btn active" id="tool-bad" onclick="setTool('bad')">★ BAD (피하기)</button>
+    <button class="tool-btn" id="tool-good" onclick="setTool('good')">● GOOD (먹기)</button>
+    <button class="tool-btn" id="tool-erase" onclick="setTool('erase')">지우개</button>
+    <span style="font-size:11px;color:#444;margin-left:8px;">클릭: 배치/제거 &nbsp;|&nbsp; 드래그: 연속 배치</span>
+  </div>
+
+  <div id="editor-controls">
+    <span id="bpm-display">BPM: 120</span>
+    <span id="beat-counter">비트: 64</span>
+    <button class="btn btn-gray" onclick="clearAll()">전체 지우기</button>
+    <button class="btn btn-green" onclick="generateCode()">코드 생성</button>
+  </div>
+
+  <div id="grid-wrap">
+    <div style="font-size:10px;color:#444;margin-bottom:6px;">← 비트 순서 → &nbsp;&nbsp; 행: 위=레인0(왼쪽) · 가운데=레인1 · 아래=레인2(오른쪽)</div>
+    <div id="grid-header"></div>
+    <div id="grid-body"></div>
+  </div>
+
+  <div id="output-area" style="display:none;">
+    <h3>생성된 코드 — 아래를 복사해서 beat-dodge.html의 SONGS 배열에 붙여넣으세요</h3>
+    <div id="output-code"></div>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="copyCode()">코드 복사</button>
+      <span id="copy-msg" style="font-size:11px;color:#1D9E75;line-height:32px;"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+let totalBeats = 64;
+let currentTool = 'bad';
+let pattern = {}; // {beat_lane: 'bad'|'good'}
+let isDragging = false;
+let ytPlayer = null;
+
+// 유튜브 로드
+function extractYtId(url) {
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function loadYT() {
+  const url = document.getElementById('yt-url').value.trim();
+  const id = extractYtId(url);
+  if (!id) { alert('유효한 유튜브 URL이 아닙니다'); return; }
+  document.getElementById('song-ytid').value = id;
+  const wrap = document.getElementById('yt-wrap');
+  wrap.style.display = 'block';
+  wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&controls=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+}
+
+// 그리드 초기화
+function initGrid() {
+  totalBeats = parseInt(document.getElementById('song-beats').value) || 64;
+  const bpm = parseInt(document.getElementById('song-bpm').value) || 120;
+  document.getElementById('bpm-display').textContent = `BPM: ${bpm}`;
+  document.getElementById('beat-counter').textContent = `비트: ${totalBeats}`;
+  pattern = {};
+  renderGrid();
+}
+
+function renderGrid() {
+  // 헤더 (비트 번호)
+  const header = document.getElementById('grid-header');
+  header.innerHTML = '';
+  header.style.display = 'flex';
+  header.style.gap = '2px';
+  for (let b = 0; b < totalBeats; b++) {
+    const span = document.createElement('span');
+    span.style.cssText = 'width:20px;font-size:8px;color:#2a2a2a;text-align:center;flex:0 0 auto;';
+    span.textContent = (b+1) % 4 === 1 ? b+1 : '';
+    header.appendChild(span);
+  }
+
+  // 그리드 바디
+  const body = document.getElementById('grid-body');
+  body.innerHTML = '';
+  const laneLabels = ['L', 'C', 'R'];
+  for (let l = 0; l < 3; l++) {
+    const row = document.createElement('div');
+    row.className = 'grid-row';
+    const label = document.createElement('div');
+    label.className = 'grid-row-label';
+    label.textContent = laneLabels[l];
+    row.appendChild(label);
+    for (let b = 0; b < totalBeats; b++) {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.dataset.beat = b;
+      cell.dataset.lane = l;
+      const key = `${b}_${l}`;
+      if (pattern[key]) cell.classList.add(pattern[key]);
+      cell.addEventListener('mousedown', e => { isDragging = true; applyTool(b, l, cell); e.preventDefault(); });
+      cell.addEventListener('mouseenter', () => { if (isDragging) applyTool(b, l, cell); });
+      cell.addEventListener('touchstart', e => { isDragging = true; applyTool(b, l, cell); e.preventDefault(); }, {passive:false});
+      row.appendChild(cell);
+    }
+    body.appendChild(row);
+  }
+  document.addEventListener('mouseup', () => isDragging = false);
+  document.addEventListener('touchend', () => isDragging = false);
+}
+
+function applyTool(b, l, cell) {
+  const key = `${b}_${l}`;
+  cell.classList.remove('bad', 'good');
+  if (currentTool === 'erase') {
+    delete pattern[key];
+  } else if (pattern[key] === currentTool) {
+    delete pattern[key]; // 같은 거 클릭하면 제거
+  } else {
+    // 같은 비트에 bad/good 중복 방지
+    for (let otherL = 0; otherL < 3; otherL++) {
+      if (otherL !== l) {
+        const otherKey = `${b}_${otherL}`;
+        // good은 같은 비트에 bad 있으면 bad 제거
+        if (currentTool === 'good' && pattern[otherKey] === 'bad') {
+          delete pattern[otherKey];
+          const otherCell = document.querySelector(`[data-beat="${b}"][data-lane="${otherL}"]`);
+          if (otherCell) otherCell.classList.remove('bad', 'good');
+        }
+      }
+    }
+    pattern[key] = currentTool;
+    cell.classList.add(currentTool);
+  }
+}
+
+function setTool(tool) {
+  currentTool = tool;
+  ['bad','good','erase'].forEach(t => {
+    document.getElementById(`tool-${t}`)?.classList.toggle('active', t === tool);
+  });
+}
+
+function clearAll() {
+  if (!confirm('전체 패턴을 지울까요?')) return;
+  pattern = {};
+  renderGrid();
+}
+
+// 코드 생성
+function generateCode() {
+  const title = document.getElementById('song-title').value || '새 곡';
+  const ytId = document.getElementById('song-ytid').value || 'YTID';
+  const bpm = parseInt(document.getElementById('song-bpm').value) || 120;
+  const beats = totalBeats;
+  const color = document.getElementById('song-color').value;
+
+  // w 배열 생성 (bad 레인 순서)
+  const badsByBeat = {};
+  const goodsByBeat = {};
+  for (const key in pattern) {
+    const [b, l] = key.split('_').map(Number);
+    if (pattern[key] === 'bad') {
+      if (!badsByBeat[b]) badsByBeat[b] = [];
+      badsByBeat[b].push(l);
+    } else {
+      if (!goodsByBeat[b]) goodsByBeat[b] = [];
+      goodsByBeat[b].push(l);
+    }
+  }
+
+  // 패턴 배열로 직렬화
+  const patternArr = [];
+  for (let b = 0; b < beats; b++) {
+    const bads = badsByBeat[b] || [];
+    const goods = goodsByBeat[b] || [];
+    patternArr.push({ b, bads, goods });
+  }
+
+  // 코드 생성
+  const patternLines = patternArr
+    .filter(p => p.bads.length > 0 || p.goods.length > 0)
+    .map(p => {
+      const items = [
+        ...p.bads.map(l => `{lane:${l},type:'bad'}`),
+        ...p.goods.map(l => `{lane:${l},type:'good'}`)
+      ];
+      return `      if(b===${p.b})r.push(${items.join(',')});`;
+    }).join('\n');
+
+  const code = `  {
+    title: '${title}',
+    ytId: '${ytId}',
+    bpm: ${bpm},
+    color: '${color}',
+    totalBeats: ${beats},
+    pattern(b, diff) {
+      const r = [];
+${patternLines || '      // 패턴 없음'}
+      return r;
+    }
+  },`;
+
+  document.getElementById('output-code').textContent = code;
+  document.getElementById('output-area').style.display = 'block';
+  document.getElementById('output-area').scrollIntoView({behavior:'smooth'});
+}
+
+function copyCode() {
+  const code = document.getElementById('output-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const msg = document.getElementById('copy-msg');
+    msg.textContent = '✓ 복사됐어요!';
+    setTimeout(() => msg.textContent = '', 2000);
+  });
+}
+
+// 초기화
+initGrid();
+</script>
+</body>
+</html>
