@@ -6,135 +6,345 @@
 <title>Beat Dodge — 패턴 에디터</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;min-height:100vh;}
-#header{padding:12px 16px;background:#111;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;gap:12px;}
-#header h1{font-size:14px;font-weight:600;color:#AFA9EC;}
-#header span{font-size:11px;color:#444;}
+body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+#wrap{display:flex;height:100vh;gap:0;}
 
-/* 유튜브 + 설정 */
-#setup{padding:12px 16px;background:#0d0d18;border-bottom:1px solid #1a1a2e;display:flex;flex-direction:column;gap:8px;}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.row label{font-size:11px;color:#555;white-space:nowrap;}
-.inp{font-size:12px;padding:6px 10px;background:#111;border:1px solid #222;border-radius:6px;color:#fff;outline:none;}
+/* 왼쪽: 설정 패널 */
+#panel{width:280px;flex:0 0 280px;background:#0d0d18;border-right:1px solid #1a1a2e;display:flex;flex-direction:column;overflow-y:auto;}
+#panel-header{padding:12px 14px;border-bottom:1px solid #1a1a2e;}
+#panel-header h1{font-size:13px;font-weight:600;color:#AFA9EC;margin-bottom:2px;}
+#panel-header p{font-size:10px;color:#444;}
+.section{padding:12px 14px;border-bottom:1px solid #1a1a2e;}
+.section-title{font-size:10px;color:#444;margin-bottom:8px;letter-spacing:.05em;}
+.field{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.field label{font-size:10px;color:#666;}
+.inp{font-size:12px;padding:6px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#fff;outline:none;width:100%;}
 .inp:focus{border-color:#534AB7;}
-.btn{font-size:12px;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:500;white-space:nowrap;}
-.btn-primary{background:#534AB7;color:#fff;}.btn-primary:hover{background:#7F77DD;}
-.btn-green{background:#1D9E75;color:#fff;}.btn-green:hover{background:#25c090;}
-.btn-red{background:#E24B4A;color:#fff;}.btn-red:hover{background:#f06060;}
-.btn-gray{background:#222;color:#aaa;border:1px solid #333;}.btn-gray:hover{background:#2a2a2a;}
+.row{display:flex;gap:6px;}
+.btn{font-size:11px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-weight:500;width:100%;margin-bottom:4px;}
+.btn-primary{background:#534AB7;color:#fff;}
+.btn-green{background:#1D9E75;color:#fff;}
+.btn-gray{background:#1a1a2e;color:#888;border:1px solid #333;}
+.btn-red{background:rgba(226,75,74,.2);color:#E24B4A;border:1px solid #E24B4A;}
 
-/* 유튜브 영상 */
-#yt-wrap{width:100%;aspect-ratio:16/9;background:#000;position:relative;}
-#yt-wrap iframe{width:100%;height:100%;border:none;display:block;}
+/* 도구 */
+.tool-btn{flex:1;padding:7px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;text-align:center;border:1px solid #333;background:#111;color:#666;}
+.tool-btn.active-bad{border-color:#E24B4A;background:rgba(226,75,74,.2);color:#E24B4A;}
+.tool-btn.active-good{border-color:#1D9E75;background:rgba(29,158,117,.2);color:#1D9E75;}
+.tool-btn.active-erase{border-color:#888;background:rgba(255,255,255,.08);color:#ccc;}
 
-/* 타임라인 + 에디터 */
-#editor-area{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
-#editor-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-#bpm-display{font-size:13px;color:#AFA9EC;font-weight:600;}
-#beat-counter{font-size:12px;color:#555;}
+/* 출력 코드 */
+#output-code{font-family:monospace;font-size:10px;color:#AFA9EC;background:#080810;padding:8px;border-radius:6px;white-space:pre;overflow:auto;max-height:180px;border:1px solid #1a1a2e;margin-bottom:6px;}
 
-/* 그리드 */
-#grid-wrap{background:#080810;border:1px solid #1a1a2e;border-radius:8px;padding:10px;overflow-x:auto;}
-#grid-header{display:flex;gap:2px;margin-bottom:4px;padding-left:32px;}
-#grid-header span{width:20px;font-size:8px;color:#333;text-align:center;flex:0 0 auto;}
-#grid-body{display:flex;flex-direction:column;gap:2px;}
-.grid-row{display:flex;gap:2px;align-items:center;}
-.grid-row-label{width:30px;font-size:10px;color:#555;text-align:right;padding-right:4px;flex:0 0 auto;}
-.grid-cell{width:20px;height:20px;border-radius:3px;background:#111;border:1px solid #1a1a2e;cursor:pointer;flex:0 0 auto;transition:background .1s;position:relative;}
-.grid-cell:hover{background:#1a1a2e;}
-.grid-cell.bad{background:#E24B4A;border-color:#E24B4A;}
-.grid-cell.good{background:#1D9E75;border-color:#1D9E75;}
-.grid-cell.current{outline:2px solid #fff;outline-offset:1px;}
+/* 오른쪽: 게임 뷰 + 에디터 */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#yt-area{background:#000;flex:0 0 auto;}
+#yt-area iframe{width:100%;height:180px;border:none;display:block;}
+#yt-placeholder{height:180px;display:flex;align-items:center;justify-content:center;color:#333;font-size:13px;background:#000;}
 
-/* 재생 커서 */
-#play-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;opacity:.6;pointer-events:none;display:none;}
-
-/* 범례 + 도구 */
-#tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500;}
-.tool-btn.active{outline:2px solid #fff;}
-#tool-bad{background:rgba(226,75,74,.3);border:1px solid #E24B4A;color:#E24B4A;}
-#tool-good{background:rgba(29,158,117,.3);border:1px solid #1D9E75;color:#1D9E75;}
-#tool-erase{background:rgba(255,255,255,.05);border:1px solid #333;color:#888;}
-
-/* 출력 */
-#output-area{background:#080810;border:1px solid #1a1a2e;border-radius:8px;padding:12px;}
-#output-area h3{font-size:12px;color:#555;margin-bottom:8px;}
-#output-code{font-family:monospace;font-size:11px;color:#AFA9EC;background:#0a0a10;padding:10px;border-radius:6px;white-space:pre;overflow-x:auto;max-height:200px;overflow-y:auto;border:1px solid #1a1a2e;}
+/* 게임형 에디터 */
+#game-editor{flex:1;display:flex;overflow:hidden;position:relative;}
+#lanes{display:flex;flex:1;gap:2px;padding:8px;background:#0a0a0f;overflow-y:auto;}
+.lane{flex:1;display:flex;flex-direction:column;gap:2px;min-width:60px;}
+.lane-header{text-align:center;font-size:11px;color:#555;padding:4px;background:#111;border-radius:4px;margin-bottom:4px;position:sticky;top:0;z-index:10;}
+.beat-cell{width:100%;height:28px;border-radius:4px;background:#111;border:1px solid #1a1a2e;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#333;transition:background .08s;position:relative;flex:0 0 auto;}
+.beat-cell:hover{background:#1a1a2e;color:#555;}
+.beat-cell.bad{background:rgba(226,75,74,.35);border-color:#E24B4A;color:#E24B4A;}
+.beat-cell.good{background:rgba(29,158,117,.35);border-color:#1D9E75;color:#1D9E75;}
+.beat-cell.beat-marker{border-color:#2a2a3a;}
+.beat-cell.beat-4{border-top:1px solid #2a2a3a;}
+.beat-num{position:absolute;left:3px;top:1px;font-size:8px;color:#2a2a2a;pointer-events:none;}
 </style>
 </head>
 <body>
+<div id="wrap">
+  <!-- 왼쪽 패널 -->
+  <div id="panel">
+    <div id="panel-header">
+      <h1>🎵 패턴 에디터</h1>
+      <p>노래 들으면서 클릭으로 패턴 배치</p>
+    </div>
 
-<div id="header">
-  <h1>🎵 Beat Dodge 패턴 에디터</h1>
-  <span>노래 들으면서 비트 배치 → 코드 복사 → 메인 파일에 붙여넣기</span>
-</div>
+    <div class="section">
+      <div class="section-title">곡 선택</div>
+      <select id="song-select" class="inp" onchange="loadExistingSong(this.value)" style="margin-bottom:6px;">
+        <option value="">— 새 곡 만들기 —</option>
+      </select>
+      <div style="font-size:10px;color:#444;">기존 곡 선택하면 패턴 자동 로드</div>
+    </div>
 
-<div id="setup">
-  <div class="row">
-    <label>유튜브 URL</label>
-    <input id="yt-url" class="inp" style="flex:1;min-width:200px;" placeholder="https://youtu.be/..."/>
-    <button class="btn btn-primary" onclick="loadYT()">불러오기</button>
+    <div class="section">
+      <div class="section-title">유튜브</div>
+      <div class="field">
+        <label>URL 또는 iframe 코드</label>
+        <input id="yt-url" class="inp" placeholder="https://youtu.be/..."/>
+      </div>
+      <button class="btn btn-primary" onclick="loadYT()">▶ 불러오기 + 재생</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">곡 정보</div>
+      <div class="field"><label>제목</label><input id="song-title" class="inp" placeholder="Hugo 번외곡 | Melting down"/></div>
+      <div class="field"><label>ytId (자동)</label><input id="song-ytid" class="inp" placeholder="자동입력"/></div>
+      <div class="row">
+        <div class="field" style="flex:1"><label>BPM</label><input id="song-bpm" class="inp" type="number" value="120"/></div>
+        <div class="field" style="flex:1"><label>총 비트</label><input id="song-beats" class="inp" type="number" value="64"/></div>
+      </div>
+      <div class="field"><label>테마 색상</label><input id="song-color" class="inp" type="color" value="#534AB7"/></div>
+      <button class="btn btn-gray" onclick="initGrid()">그리드 초기화</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">도구</div>
+      <div class="row" style="margin-bottom:8px;">
+        <div class="tool-btn active-bad" id="tool-bad" onclick="setTool('bad')">★ BAD</div>
+        <div class="tool-btn" id="tool-good" onclick="setTool('good')">● GOOD</div>
+        <div class="tool-btn" id="tool-erase" onclick="setTool('erase')">지우기</div>
+      </div>
+      <div style="font-size:10px;color:#444;line-height:1.6;">
+        • 클릭: 배치 / 다시 클릭: 제거<br>
+        • 드래그: 연속 배치<br>
+        • GOOD 배치 시 같은 비트 BAD 자동 제거
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">내보내기</div>
+      <button class="btn btn-green" onclick="generateCode()" style="margin-bottom:8px;">코드 생성</button>
+      <div id="output-code" style="display:none;"></div>
+      <button class="btn btn-primary" id="copy-btn" style="display:none;" onclick="copyCode()">복사</button>
+      <div id="copy-msg" style="font-size:10px;color:#1D9E75;margin-top:4px;"></div>
+    </div>
+
+    <div class="section">
+      <button class="btn btn-red" onclick="clearAll()">전체 초기화</button>
+    </div>
   </div>
-  <div class="row">
-    <label>곡 제목</label>
-    <input id="song-title" class="inp" style="width:200px;" placeholder="예: Hugo 번외곡 | Melting down"/>
-    <label>ytId</label>
-    <input id="song-ytid" class="inp" style="width:120px;" placeholder="자동입력"/>
-    <label>BPM</label>
-    <input id="song-bpm" class="inp" style="width:70px;" type="number" value="120"/>
-    <label>총 비트</label>
-    <input id="song-beats" class="inp" style="width:70px;" type="number" value="64"/>
-    <label>색상</label>
-    <input id="song-color" class="inp" style="width:90px;" type="color" value="#534AB7"/>
-    <button class="btn btn-gray" onclick="initGrid()">그리드 초기화</button>
-  </div>
-</div>
 
-<div id="yt-wrap" style="display:none;"></div>
-
-<div id="editor-area">
-  <div id="tools">
-    <span style="font-size:11px;color:#555;">도구:</span>
-    <button class="tool-btn active" id="tool-bad" onclick="setTool('bad')">★ BAD (피하기)</button>
-    <button class="tool-btn" id="tool-good" onclick="setTool('good')">● GOOD (먹기)</button>
-    <button class="tool-btn" id="tool-erase" onclick="setTool('erase')">지우개</button>
-    <span style="font-size:11px;color:#444;margin-left:8px;">클릭: 배치/제거 &nbsp;|&nbsp; 드래그: 연속 배치</span>
-  </div>
-
-  <div id="editor-controls">
-    <span id="bpm-display">BPM: 120</span>
-    <span id="beat-counter">비트: 64</span>
-    <button class="btn btn-gray" onclick="clearAll()">전체 지우기</button>
-    <button class="btn btn-green" onclick="generateCode()">코드 생성</button>
-  </div>
-
-  <div id="grid-wrap">
-    <div style="font-size:10px;color:#444;margin-bottom:6px;">← 비트 순서 → &nbsp;&nbsp; 행: 위=레인0(왼쪽) · 가운데=레인1 · 아래=레인2(오른쪽)</div>
-    <div id="grid-header"></div>
-    <div id="grid-body"></div>
-  </div>
-
-  <div id="output-area" style="display:none;">
-    <h3>생성된 코드 — 아래를 복사해서 beat-dodge.html의 SONGS 배열에 붙여넣으세요</h3>
-    <div id="output-code"></div>
-    <div style="margin-top:8px;display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="copyCode()">코드 복사</button>
-      <span id="copy-msg" style="font-size:11px;color:#1D9E75;line-height:32px;"></span>
+  <!-- 오른쪽: 유튜브 + 게임형 에디터 -->
+  <div id="main">
+    <div id="yt-area">
+      <div id="yt-placeholder">← 왼쪽에서 유튜브 URL을 입력하세요</div>
+    </div>
+    <div id="game-editor">
+      <div id="lanes">
+        <div class="lane" id="lane-0">
+          <div class="lane-header">← 왼쪽 (레인 0)</div>
+        </div>
+        <div class="lane" id="lane-1">
+          <div class="lane-header">가운데 (레인 1)</div>
+        </div>
+        <div class="lane" id="lane-2">
+          <div class="lane-header">오른쪽 → (레인 2)</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
+const SONGS = [
+  { title:'Hugo 번외곡 | Melting down', ytId:'p4spKijRcAw', bpm:96, color:'#F4A0A0', totalBeats:400,
+    pattern(b,diff){
+      const r=[],w=[0,1,2,1,0,2,0,1,2,0,2,1,2,0,1,0,2,1,1,0,2,1,2,0];
+      const prog=b/400,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%16===13);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Eden 번외곡 | Freedomless', ytId:'3PpedpOIW28', bpm:112, color:'#7DD3FC', totalBeats:560,
+    pattern(b,diff){
+      const r=[],w=[0,2,1,0,2,1,2,0,1,0,1,2,1,2,0,2,0,1,1,0,2,1,0,2];
+      const prog=b/560,base=prog<0.3?8:prog<0.7?5:3;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%14===11);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Liam 번외곡 | Word', ytId:'KvWs7PzYgwY', bpm:118, color:'#1D9E75', totalBeats:464,
+    pattern(b,diff){
+      const r=[],w=[0,1,2,0,2,1,2,0,1,2,1,0,1,2,0,1,0,2,0,2,1,0,1,2];
+      const prog=b/464,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%12===9);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Ash 번외곡 | 가까이 오지 말라고 말했잖아!', ytId:'umx2NvAX1qY', bpm:135, color:'#DC2626', totalBeats:448,
+    pattern(b,diff){
+      const r=[],w=[0,2,1,0,2,0,1,2,0,1,2,1,0,2,1,0,2,1,0,1,2,0,2,1];
+      const prog=b/448,base=prog<0.25?8:prog<0.5?5:prog<0.75?4:3;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%10===8);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Santa 번외곡 | AWAKE', ytId:'590xIhxAoiU', bpm:128, color:'#F5C842', totalBeats:472,
+    pattern(b,diff){
+      const r=[],w=[0,1,2,0,1,2,1,0,2,1,2,0,0,2,1,0,2,1,2,0,1,2,1,0];
+      const prog=b/472,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%13===10);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Syndrome 번외곡 | Set me free', ytId:'C2ccLTTkgIE', bpm:124, color:'#991B1B', totalBeats:552,
+    pattern(b,diff){
+      const r=[],w=[2,0,1,2,0,2,1,0,2,0,1,2,1,2,0,1,0,2,0,1,2,1,0,2];
+      const prog=b/552,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%12===9);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Pure 번외곡 | 맞아, 난 네가 좋아', ytId:'9teD-_Yx1Cg', bpm:102, color:'#F9A8D4', totalBeats:360,
+    pattern(b,diff){
+      const r=[],w=[1,0,2,1,2,0,0,1,2,0,2,1,2,1,0,2,0,1,1,2,0,1,0,2];
+      const prog=b/360,base=prog<0.3?9:prog<0.7?7:5;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%14===11);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Amore 번외곡 | ROSA NERA', ytId:'HYcXDO0U1zY', bpm:118, color:'#84A840', totalBeats:512,
+    pattern(b,diff){
+      const r=[],w=[0,2,0,1,2,1,2,0,1,0,2,1,1,0,2,1,2,0,2,1,0,2,0,1];
+      const prog=b/512,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%13===10);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Overload 번외곡 | Feel it, electricity', ytId:'f-eWzfmaJlo', bpm:138, color:'#FDE047', totalBeats:504,
+    pattern(b,diff){
+      const r=[],w=[0,2,1,2,0,1,0,1,2,1,0,2,2,0,1,0,2,1,1,2,0,2,1,0];
+      const prog=b/504,base=prog<0.25?7:prog<0.6?5:3;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%11===8);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Stray 번외곡 | 아직은 아니야', ytId:'gkaB51mPqhA', bpm:95, color:'#C5B358', totalBeats:384,
+    pattern(b,diff){
+      const r=[],w=[1,2,0,1,0,2,2,1,0,2,0,1,0,1,2,0,2,1,1,0,2,1,2,0];
+      const prog=b/384,base=prog<0.4?9:prog<0.75?7:5;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%15===12);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Vibe 번외곡 | Home sweet home', ytId:'juWw7PqGZiI', bpm:100, color:'#34D399', totalBeats:424,
+    pattern(b,diff){
+      const r=[],w=[0,1,2,1,0,1,2,0,1,0,2,1,1,2,0,2,1,0,0,2,1,2,0,1];
+      const prog=b/424,base=prog<0.3?9:prog<0.7?7:5;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%14===11);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Pika 번외곡', ytId:'HFl4VqD4IcQ', bpm:110, color:'#FACC15', totalBeats:342,
+    pattern(b,diff){
+      const r=[],w=[0,1,2,0,2,1,1,0,2,1,2,0,2,0,1,2,1,0,0,2,1,0,1,2];
+      const prog=b/342,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%13===10);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Icarus | smiling', ytId:'y1gs8sPRe8s', bpm:105, color:'#7DD3FC', totalBeats:440,
+    pattern(b,diff){
+      const r=[],w=[1,0,2,1,0,2,0,2,1,0,1,2,2,1,0,1,2,0,0,1,2,1,0,2];
+      const prog=b/440,base=prog<0.35?9:prog<0.7?7:5;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%15===12);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Oasis 번외곡 | 오아시스', ytId:'2hpwi4MzPfg', bpm:108, color:'#38BDF8', totalBeats:344,
+    pattern(b,diff){
+      const r=[],w=[0,2,1,0,1,2,2,0,1,2,0,1,1,2,0,0,1,2,1,0,2,0,2,1];
+      const prog=b/344,base=prog<0.3?8:prog<0.7?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%12===9);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Kato 번외곡 | Losing control', ytId:'hO3oQ7pmssQ', bpm:120, color:'#22C55E', totalBeats:472,
+    pattern(b,diff){
+      const r=[],w=[2,0,1,2,1,0,0,2,1,0,1,2,1,0,2,1,2,0,2,1,0,1,2,0];
+      const prog=b/472,base=prog<0.25?8:prog<0.6?6:4;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%13===10);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Karma 번외곡 | ただの Karma', ytId:'weCSq9xCDEk', bpm:148, color:'#EAB308', totalBeats:592,
+    pattern(b,diff){
+      const r=[],w=[1,2,0,1,2,0,2,1,0,2,0,1,0,1,2,0,2,1,1,0,2,1,2,0];
+      const prog=b/592,base=prog<0.35?7:prog<0.7?5:3;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%11===8);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  },
+  { title:'Shane 번외곡 | Come closer, if you want', ytId:'8EogmcRw0UI', bpm:98, color:'#16A34A', totalBeats:424,
+    pattern(b,diff){
+      const r=[],w=[0,2,1,0,2,0,1,2,1,0,2,1,2,0,1,2,1,0,0,1,2,0,2,1];
+      const prog=b/424,base=prog<0.3?9:prog<0.65?7:5;
+      const gap=diff==='easy'?base+3:diff==='hard'?Math.max(2,base-2):base;
+      const goodBeat=(b%14===11);
+      if(!goodBeat&&b%gap===0) r.push({lane:w[b%24],type:'bad'});
+      if(goodBeat) r.push({lane:w[b%24],type:'good'});
+      return r;
+    }
+  }
+];
+
+// 현재 편집 중인 곡 인덱스
+let currentSongIdx = -1;
+
 let totalBeats = 64;
 let currentTool = 'bad';
-let pattern = {}; // {beat_lane: 'bad'|'good'}
+let pattern = {}; // key: "beat_lane" → 'bad'|'good'
 let isDragging = false;
-let ytPlayer = null;
 
-// 유튜브 로드
 function extractYtId(url) {
-  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  const src = url.match(/src="([^"]+)"/);
+  const u = src ? src[1] : url;
+  const m = u.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -143,92 +353,142 @@ function loadYT() {
   const id = extractYtId(url);
   if (!id) { alert('유효한 유튜브 URL이 아닙니다'); return; }
   document.getElementById('song-ytid').value = id;
-  const wrap = document.getElementById('yt-wrap');
-  wrap.style.display = 'block';
-  wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&controls=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  const area = document.getElementById('yt-area');
+  area.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&controls=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 }
 
-// 그리드 초기화
+function populateSongSelect() {
+  const sel = document.getElementById('song-select');
+  sel.innerHTML = '<option value="">— 새 곡 만들기 —</option>';
+  SONGS.forEach((song, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${song.title} (${song.bpm} BPM)`;
+    sel.appendChild(opt);
+  });
+}
+
+function loadExistingSong(idx) {
+  if (idx === '') { currentSongIdx = -1; return; }
+  currentSongIdx = parseInt(idx);
+  const song = SONGS[currentSongIdx];
+
+  // 곡 정보 채우기
+  document.getElementById('song-title').value = song.title;
+  document.getElementById('song-ytid').value = song.ytId;
+  document.getElementById('song-bpm').value = song.bpm;
+  document.getElementById('song-beats').value = song.totalBeats;
+  document.getElementById('song-color').value = song.color;
+  document.getElementById('yt-url').value = `https://youtu.be/${song.ytId}`;
+
+  // 유튜브 로드
+  const area = document.getElementById('yt-area');
+  area.innerHTML = `<iframe src="https://www.youtube.com/embed/${song.ytId}?autoplay=1&controls=1&rel=0&modestbranding=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+
+  // 패턴 로드
+  totalBeats = song.totalBeats;
+  pattern = {};
+  for (let b = 0; b < song.totalBeats; b++) {
+    const items = song.pattern(b, 'normal');
+    items.forEach(item => {
+      pattern[`${b}_${item.lane}`] = item.type;
+    });
+  }
+  renderGrid();
+}
+
 function initGrid() {
   totalBeats = parseInt(document.getElementById('song-beats').value) || 64;
-  const bpm = parseInt(document.getElementById('song-bpm').value) || 120;
-  document.getElementById('bpm-display').textContent = `BPM: ${bpm}`;
-  document.getElementById('beat-counter').textContent = `비트: ${totalBeats}`;
   pattern = {};
   renderGrid();
 }
 
 function renderGrid() {
-  // 헤더 (비트 번호)
-  const header = document.getElementById('grid-header');
-  header.innerHTML = '';
-  header.style.display = 'flex';
-  header.style.gap = '2px';
-  for (let b = 0; b < totalBeats; b++) {
-    const span = document.createElement('span');
-    span.style.cssText = 'width:20px;font-size:8px;color:#2a2a2a;text-align:center;flex:0 0 auto;';
-    span.textContent = (b+1) % 4 === 1 ? b+1 : '';
-    header.appendChild(span);
-  }
-
-  // 그리드 바디
-  const body = document.getElementById('grid-body');
-  body.innerHTML = '';
-  const laneLabels = ['L', 'C', 'R'];
   for (let l = 0; l < 3; l++) {
-    const row = document.createElement('div');
-    row.className = 'grid-row';
-    const label = document.createElement('div');
-    label.className = 'grid-row-label';
-    label.textContent = laneLabels[l];
-    row.appendChild(label);
+    const lane = document.getElementById(`lane-${l}`);
+    // 헤더 유지하고 셀만 제거
+    const header = lane.querySelector('.lane-header');
+    lane.innerHTML = '';
+    lane.appendChild(header);
+
     for (let b = 0; b < totalBeats; b++) {
       const cell = document.createElement('div');
-      cell.className = 'grid-cell';
-      cell.dataset.beat = b;
-      cell.dataset.lane = l;
+      cell.className = 'beat-cell';
+      if ((b+1) % 4 === 1) cell.classList.add('beat-4');
+
+      const num = document.createElement('span');
+      num.className = 'beat-num';
+      num.textContent = (b+1) % 4 === 1 ? b+1 : '';
+      cell.appendChild(num);
+
       const key = `${b}_${l}`;
-      if (pattern[key]) cell.classList.add(pattern[key]);
-      cell.addEventListener('mousedown', e => { isDragging = true; applyTool(b, l, cell); e.preventDefault(); });
-      cell.addEventListener('mouseenter', () => { if (isDragging) applyTool(b, l, cell); });
-      cell.addEventListener('touchstart', e => { isDragging = true; applyTool(b, l, cell); e.preventDefault(); }, {passive:false});
-      row.appendChild(cell);
+      if (pattern[key]) {
+        cell.classList.add(pattern[key]);
+        cell.appendChild(document.createTextNode(pattern[key]==='bad'?'★':'●'));
+      }
+
+      cell.addEventListener('mousedown', e => { isDragging=true; applyTool(b,l,cell); e.preventDefault(); });
+      cell.addEventListener('mouseenter', () => { if(isDragging) applyTool(b,l,cell); });
+      cell.addEventListener('touchstart', e => { isDragging=true; applyTool(b,l,cell); e.preventDefault(); }, {passive:false});
+      lane.appendChild(cell);
     }
-    body.appendChild(row);
   }
-  document.addEventListener('mouseup', () => isDragging = false);
-  document.addEventListener('touchend', () => isDragging = false);
 }
 
 function applyTool(b, l, cell) {
   const key = `${b}_${l}`;
-  cell.classList.remove('bad', 'good');
-  if (currentTool === 'erase') {
+  // 현재 상태
+  const cur = pattern[key];
+
+  // 같은 거 클릭 → 제거
+  if (cur === currentTool) {
     delete pattern[key];
-  } else if (pattern[key] === currentTool) {
-    delete pattern[key]; // 같은 거 클릭하면 제거
+  } else if (currentTool === 'erase') {
+    delete pattern[key];
   } else {
-    // 같은 비트에 bad/good 중복 방지
-    for (let otherL = 0; otherL < 3; otherL++) {
-      if (otherL !== l) {
-        const otherKey = `${b}_${otherL}`;
-        // good은 같은 비트에 bad 있으면 bad 제거
-        if (currentTool === 'good' && pattern[otherKey] === 'bad') {
-          delete pattern[otherKey];
-          const otherCell = document.querySelector(`[data-beat="${b}"][data-lane="${otherL}"]`);
-          if (otherCell) otherCell.classList.remove('bad', 'good');
+    // GOOD 배치 시 같은 비트 다른 레인 BAD 제거
+    if (currentTool === 'good') {
+      for (let ol = 0; ol < 3; ol++) {
+        if (ol !== l) {
+          const ok = `${b}_${ol}`;
+          if (pattern[ok] === 'bad') {
+            delete pattern[ok];
+          }
         }
       }
     }
     pattern[key] = currentTool;
-    cell.classList.add(currentTool);
+  }
+  // 전체 리렌더 (해당 비트 행만)
+  refreshBeat(b);
+}
+
+function refreshBeat(b) {
+  for (let l = 0; l < 3; l++) {
+    const lane = document.getElementById(`lane-${l}`);
+    // 헤더 다음 b번째 셀
+    const cells = lane.querySelectorAll('.beat-cell');
+    const cell = cells[b];
+    if (!cell) continue;
+
+    const key = `${b}_${l}`;
+    cell.classList.remove('bad','good');
+    // 텍스트 노드 제거
+    cell.childNodes.forEach(n => { if(n.nodeType===3) n.remove(); });
+
+    if (pattern[key]) {
+      cell.classList.add(pattern[key]);
+      cell.appendChild(document.createTextNode(pattern[key]==='bad'?'★':'●'));
+    }
   }
 }
 
 function setTool(tool) {
   currentTool = tool;
   ['bad','good','erase'].forEach(t => {
-    document.getElementById(`tool-${t}`)?.classList.toggle('active', t === tool);
+    const btn = document.getElementById(`tool-${t}`);
+    btn.className = 'tool-btn';
+    if (t === tool) btn.classList.add(`active-${t}`);
   });
 }
 
@@ -238,7 +498,6 @@ function clearAll() {
   renderGrid();
 }
 
-// 코드 생성
 function generateCode() {
   const title = document.getElementById('song-title').value || '새 곡';
   const ytId = document.getElementById('song-ytid').value || 'YTID';
@@ -246,38 +505,17 @@ function generateCode() {
   const beats = totalBeats;
   const color = document.getElementById('song-color').value;
 
-  // w 배열 생성 (bad 레인 순서)
-  const badsByBeat = {};
-  const goodsByBeat = {};
-  for (const key in pattern) {
-    const [b, l] = key.split('_').map(Number);
-    if (pattern[key] === 'bad') {
-      if (!badsByBeat[b]) badsByBeat[b] = [];
-      badsByBeat[b].push(l);
-    } else {
-      if (!goodsByBeat[b]) goodsByBeat[b] = [];
-      goodsByBeat[b].push(l);
+  const lines = [];
+  for (let b = 0; b < beats; b++) {
+    const items = [];
+    for (let l = 0; l < 3; l++) {
+      const k = `${b}_${l}`;
+      if (pattern[k]) items.push(`{lane:${l},type:'${pattern[k]}'}`);
+    }
+    if (items.length > 0) {
+      lines.push(`      if(b===${b}) r.push(${items.join(',')});`);
     }
   }
-
-  // 패턴 배열로 직렬화
-  const patternArr = [];
-  for (let b = 0; b < beats; b++) {
-    const bads = badsByBeat[b] || [];
-    const goods = goodsByBeat[b] || [];
-    patternArr.push({ b, bads, goods });
-  }
-
-  // 코드 생성
-  const patternLines = patternArr
-    .filter(p => p.bads.length > 0 || p.goods.length > 0)
-    .map(p => {
-      const items = [
-        ...p.bads.map(l => `{lane:${l},type:'bad'}`),
-        ...p.goods.map(l => `{lane:${l},type:'good'}`)
-      ];
-      return `      if(b===${p.b})r.push(${items.join(',')});`;
-    }).join('\n');
 
   const code = `  {
     title: '${title}',
@@ -287,26 +525,30 @@ function generateCode() {
     totalBeats: ${beats},
     pattern(b, diff) {
       const r = [];
-${patternLines || '      // 패턴 없음'}
+${lines.join('\n') || '      // 패턴 없음'}
       return r;
     }
   },`;
 
-  document.getElementById('output-code').textContent = code;
-  document.getElementById('output-area').style.display = 'block';
-  document.getElementById('output-area').scrollIntoView({behavior:'smooth'});
+  const el = document.getElementById('output-code');
+  el.textContent = code;
+  el.style.display = 'block';
+  document.getElementById('copy-btn').style.display = 'block';
 }
 
 function copyCode() {
-  const code = document.getElementById('output-code').textContent;
-  navigator.clipboard.writeText(code).then(() => {
+  navigator.clipboard.writeText(document.getElementById('output-code').textContent).then(() => {
     const msg = document.getElementById('copy-msg');
-    msg.textContent = '✓ 복사됐어요!';
-    setTimeout(() => msg.textContent = '', 2000);
+    msg.textContent = '✓ 복사됐어요! beat-dodge.html의 SONGS 배열에 붙여넣으세요.';
+    setTimeout(() => msg.textContent='', 3000);
   });
 }
 
+document.addEventListener('mouseup', () => isDragging=false);
+document.addEventListener('touchend', () => isDragging=false);
+
 // 초기화
+populateSongSelect();
 initGrid();
 </script>
 </body>
